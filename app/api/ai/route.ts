@@ -16,6 +16,7 @@ async function callGemini(modelUrl: string, apiKey: string, prompt: string): Pro
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 2048,
+          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
     });
@@ -47,24 +48,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const prompt = `You are a certified financial planner AI assistant. Analyze the following financial calculation and provide personalized, actionable recommendations.
+    const prompt = `You are a financial advisor. Give 3 brief recommendations for this user. Reply ONLY with valid JSON, no other text.
 
 Tool: ${toolName}
-User Inputs: ${JSON.stringify(inputs, null, 2)}
-Calculation Result: ${JSON.stringify(calculationResult, null, 2)}
+Inputs: ${JSON.stringify(inputs)}
+Result: ${JSON.stringify(calculationResult)}
 
-Provide 3-5 specific, personalized recommendations in this EXACT JSON format (no markdown, no code fences):
-{
-  "recommendations": [
-    {
-      "title": "Short title",
-      "description": "2-3 sentences with specific numbers from the user's data",
-      "priority": "high|medium|low",
-      "reasoning": "1 sentence explaining WHY this recommendation makes sense for this specific user"
-    }
-  ],
-  "enhancedSummary": "One sentence enhancing the calculation summary with insight",
-  "analysisNotes": "Brief note about the analysis"
+JSON format (respond with ONLY this JSON, nothing else):
+{"recommendations":[{"title":"5 words max","description":"1 sentence with user's numbers","priority":"high","reasoning":"1 sentence why"}],"enhancedSummary":"1 sentence","analysisNotes":"1 sentence"}`;
 }
 
 Rules:
