@@ -35,7 +35,7 @@ const categoryColors: Record<string, string> = {
 
 export function ToolCard({ tool }: ToolCardProps) {
   return (
-    <Link href={tool.isPremium ? "/pricing" : `/tools/${tool.slug}`}>
+    <Link href={`/tools/${tool.slug}`}>
       <Card hover className="group h-full cursor-pointer">
         <div className="flex flex-col h-full">
           <div className="flex items-start justify-between mb-3">
@@ -46,10 +46,8 @@ export function ToolCard({ tool }: ToolCardProps) {
             >
               <DynamicIcon name={tool.icon} className="h-5 w-5" />
             </div>
-            <Badge
-              variant={tool.isPremium ? "premium" : "default"}
-            >
-              {tool.isPremium ? "Premium" : "Free"}
+            <Badge variant="default">
+              Free
             </Badge>
           </div>
           <h3 className="font-semibold text-base mb-1 group-hover:text-primary transition-colors">
@@ -63,7 +61,7 @@ export function ToolCard({ tool }: ToolCardProps) {
               {categoryLabels[tool.category]}
             </span>
             <span className="flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-              {tool.isPremium ? "Unlock" : "Use Tool"}
+              Use Tool
               <ArrowRight className="h-3 w-3" />
             </span>
           </div>

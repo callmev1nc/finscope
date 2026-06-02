@@ -10,7 +10,7 @@ export function HeroSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center relative">
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-zinc-50 px-4 py-1.5 text-sm text-zinc-600 mb-8 dark:bg-zinc-800 dark:text-zinc-400">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          <span>15 Smart Financial Planning Tools</span>
+          <span>16 Smart Financial Planning Tools — 100% Free</span>
         </div>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl max-w-3xl mx-auto">
           Take Control of Your{" "}
@@ -29,7 +29,7 @@ export function HeroSection() {
           </Link>
           <Link href="/pricing">
             <Button size="lg" variant="outline">
-              View Pricing
+              Why Free?
             </Button>
           </Link>
         </div>

@@ -6,7 +6,7 @@ export const investmentPortfolio: ToolDefinition = {
   description: "Design a diversified investment portfolio tailored to your risk tolerance and goals.",
   icon: "PieChart",
   category: "investing",
-  isPremium: true,
+  isPremium: false,
   color: "blue",
   fields: [
     { key: "investmentAmount", label: "Total Amount to Invest", type: "currency", required: true, defaultValue: 50000, group: "Portfolio", prefix: "$", min: 0 },

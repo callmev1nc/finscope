@@ -6,7 +6,7 @@ export const taxOptimization: ToolDefinition = {
   description: "Identify tax-saving strategies and estimate your potential tax savings.",
   icon: "Receipt",
   category: "taxes",
-  isPremium: true,
+  isPremium: false,
   color: "cyan",
   fields: [
     { key: "annualIncome", label: "Annual Gross Income", type: "currency", required: true, defaultValue: 100000, group: "Income", prefix: "$", min: 0 },

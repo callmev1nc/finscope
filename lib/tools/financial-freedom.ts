@@ -6,7 +6,7 @@ export const financialFreedom: ToolDefinition = {
   description: "Calculate exactly when you'll achieve financial independence based on your current savings and spending.",
   icon: "CalendarCheck",
   category: "planning",
-  isPremium: true,
+  isPremium: false,
   color: "amber",
   fields: [
     { key: "currentSavings", label: "Current Savings & Investments", type: "currency", required: true, defaultValue: 100000, group: "Your Finances", prefix: "$", min: 0 },

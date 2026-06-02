@@ -6,7 +6,7 @@ export const incomeExpansion: ToolDefinition = {
   description: "Discover strategies to grow your income through career advancement, side hustles, and passive income.",
   icon: "TrendingUp",
   category: "income",
-  isPremium: true,
+  isPremium: false,
   color: "purple",
   fields: [
     { key: "currentIncome", label: "Current Annual Income", type: "currency", required: true, defaultValue: 75000, group: "Current Situation", prefix: "$", min: 0 },

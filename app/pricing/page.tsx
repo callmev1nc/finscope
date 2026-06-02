@@ -1,32 +1,31 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Heart } from "lucide-react";
 import Link from "next/link";
-import { getFreeTools, getPremiumTools } from "@/lib/tools/registry";
+import { getAllTools } from "@/lib/tools/registry";
 
 export default function PricingPage() {
-  const freeCount = getFreeTools().length;
-  const premiumCount = getPremiumTools().length;
+  const toolCount = getAllTools().length;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20">
       <div className="text-center mb-12">
-        <Badge variant="premium" className="mb-4">
-          <Sparkles className="h-3 w-3 mr-1" />
-          Flexible Plans
+        <Badge variant="default" className="mb-4">
+          <Heart className="h-3 w-3 mr-1" />
+          100% Free
         </Badge>
-        <h1 className="text-4xl font-bold tracking-tight">Simple, Transparent Pricing</h1>
+        <h1 className="text-4xl font-bold tracking-tight">All Tools, No Cost</h1>
         <p className="mt-4 text-lg text-zinc-500 dark:text-zinc-400 max-w-lg mx-auto">
-          Start with free tools. Upgrade to premium for advanced financial planning.
+          Every financial planning tool is completely free. No hidden fees, no premium tiers, no sign-up required.
         </p>
       </div>
 
-      <div className="grid gap-8 max-w-3xl mx-auto lg:grid-cols-2">
-        <Card className="relative">
+      <div className="max-w-lg mx-auto">
+        <Card className="relative overflow-hidden">
           <div className="text-center">
-            <h3 className="text-xl font-bold">Free</h3>
-            <p className="mt-1 text-zinc-500 dark:text-zinc-400">Get started with basics</p>
+            <h3 className="text-xl font-bold">Free Forever</h3>
+            <p className="mt-1 text-zinc-500 dark:text-zinc-400">All features, zero cost</p>
             <p className="mt-4">
               <span className="text-4xl font-bold">$0</span>
               <span className="text-zinc-400">/forever</span>
@@ -35,19 +34,19 @@ export default function PricingPage() {
               <div className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {freeCount} free financial tools
+                  All {toolCount} financial planning tools
                 </span>
               </div>
               <div className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Basic calculations and reports
+                  Advanced calculations and detailed reports
                 </span>
               </div>
               <div className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  PDF export
+                  PDF export for all tools
                 </span>
               </div>
               <div className="flex items-start gap-3">
@@ -56,65 +55,22 @@ export default function PricingPage() {
                   Share results with friends
                 </span>
               </div>
-            </div>
-            <Link href="/" className="mt-6 block">
-              <Button variant="outline" size="lg" className="w-full">
-                Get Started Free
-              </Button>
-            </Link>
-          </div>
-        </Card>
-
-        <Card className="relative overflow-hidden border-primary/30">
-          <div className="absolute top-0 right-0">
-            <Badge variant="premium" className="rounded-none rounded-bl-lg rounded-tr-xl px-3 py-1">
-              <Sparkles className="h-3 w-3 mr-1" />
-              Popular
-            </Badge>
-          </div>
-          <div className="text-center pt-4">
-            <h3 className="text-xl font-bold">Premium</h3>
-            <p className="mt-1 text-zinc-500 dark:text-zinc-400">Advanced financial planning</p>
-            <p className="mt-4">
-              <span className="text-4xl font-bold">$9</span>
-              <span className="text-zinc-400">/month</span>
-            </p>
-            <div className="mt-6 space-y-3 text-left">
               <div className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  All {freeCount} free tools
+                  No account needed — start instantly
                 </span>
               </div>
               <div className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {premiumCount} premium tools unlocked
-                </span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Detailed analytics and charts
-                </span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Priority support
-                </span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  No ads or limits
+                  No ads, no limits, no catch
                 </span>
               </div>
             </div>
             <Link href="/" className="mt-6 block">
               <Button variant="primary" size="lg" className="w-full bg-gradient-to-r from-primary to-secondary">
-                <Sparkles className="h-4 w-4" />
-                Get Started
+                Explore All Tools
               </Button>
             </Link>
           </div>

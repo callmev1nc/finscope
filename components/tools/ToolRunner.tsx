@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useToolForm } from "@/hooks/useToolForm";
 import { useCalculation } from "@/hooks/useCalculation";
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { decodeInputs } from "@/lib/share/encoder";
 
@@ -76,26 +76,6 @@ export function ToolRunner({ tool, initialInputs, encodedData }: ToolRunnerProps
     calc.reset();
     setShowResult(false);
   };
-
-  if (tool.isPremium) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-purple-100 dark:from-amber-900/30 dark:to-purple-900/30 mb-6">
-          <Lock className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-        </div>
-        <h2 className="text-2xl font-bold mb-2">Premium Tool</h2>
-        <p className="text-zinc-500 dark:text-zinc-400 max-w-md mb-6">
-          {tool.name} is a premium tool. Upgrade to unlock all premium features.
-        </p>
-        <Link
-          href="/pricing"
-          className="inline-flex h-11 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary px-6 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
-        >
-          View Pricing
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

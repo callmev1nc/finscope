@@ -6,7 +6,7 @@ export const netWorthSimulator: ToolDefinition = {
   description: "Simulate a 10x net worth growth plan with actionable steps and realistic timelines.",
   icon: "Rocket",
   category: "planning",
-  isPremium: true,
+  isPremium: false,
   color: "amber",
   fields: [
     { key: "currentNetWorth", label: "Current Net Worth", type: "currency", required: true, defaultValue: 50000, group: "Current Status", prefix: "$", min: 0 },

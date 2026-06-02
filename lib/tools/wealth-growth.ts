@@ -6,7 +6,7 @@ export const wealthGrowth: ToolDefinition = {
   description: "Project your wealth over time with systematic investing and compound growth.",
   icon: "TrendingUp",
   category: "investing",
-  isPremium: true,
+  isPremium: false,
   color: "blue",
   fields: [
     { key: "currentAge", label: "Current Age", type: "number", required: true, defaultValue: 30, group: "Personal Info", min: 18, max: 80 },

@@ -6,7 +6,7 @@ export const skillToIncome: ToolDefinition = {
   description: "See how learning a new skill can translate into real income based on market rates.",
   icon: "BookOpen",
   category: "income",
-  isPremium: true,
+  isPremium: false,
   color: "purple",
   fields: [
     { key: "skillName", label: "Skill You Want to Learn", type: "text", required: true, defaultValue: "Web Development", group: "Skill Details" },
