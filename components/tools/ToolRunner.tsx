@@ -10,6 +10,7 @@ import { useCalculation } from "@/hooks/useCalculation";
 import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Lock } from "lucide-react";
 import Link from "next/link";
+import { decodeInputs } from "@/lib/share/encoder";
 
 interface FieldErrors {
   fieldErrors?: Record<string, string>;
@@ -18,6 +19,7 @@ interface FieldErrors {
 interface ToolRunnerProps {
   tool: ToolDefinition;
   initialInputs?: Record<string, number | string | undefined>;
+  encodedData?: string;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -29,7 +31,7 @@ const categoryLabels: Record<string, string> = {
   taxes: "Taxes",
 };
 
-export function ToolRunner({ tool, initialInputs }: ToolRunnerProps) {
+export function ToolRunner({ tool, initialInputs, encodedData }: ToolRunnerProps) {
   const form = useToolForm(tool.fields);
   const calc = useCalculation(tool);
   const [showResult, setShowResult] = useState(false);
@@ -37,18 +39,20 @@ export function ToolRunner({ tool, initialInputs }: ToolRunnerProps) {
 
   // Auto-calculate on mount when sharing (run once only)
   useEffect(() => {
-    if (initialInputs && !initialRun.current) {
-      initialRun.current = true;
-      form.setAllValues(initialInputs);
-      try {
-        calc.calculate(initialInputs);
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init from shared URL data
-        setShowResult(true);
-      } catch {
-        // validation errors on shared data — show form instead
-      }
+    if (initialRun.current) return;
+    const inputs = initialInputs || (encodedData ? decodeInputs(encodedData) : null);
+    if (!inputs) return;
+
+    initialRun.current = true;
+    form.setAllValues(inputs);
+    try {
+      calc.calculate(inputs);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init from shared URL data
+      setShowResult(true);
+    } catch {
+      // validation errors on shared data — show form instead
     }
-  }, [initialInputs, form, calc]);
+  }, [initialInputs, encodedData, form, calc]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

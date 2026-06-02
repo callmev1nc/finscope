@@ -1,7 +1,6 @@
 import { getTool } from "@/lib/tools/registry";
 import { notFound } from "next/navigation";
 import { ToolRunner } from "@/components/tools/ToolRunner";
-import { decodeInputs } from "@/lib/share/encoder";
 
 export default async function SharePage({
   params,
@@ -16,9 +15,7 @@ export default async function SharePage({
   const tool = getTool(slug);
   if (!tool) notFound();
 
-  const inputs = d ? decodeInputs(d) : null;
-
-  if (!inputs) {
+  if (!d) {
     return (
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-20 text-center">
         <h1 className="text-2xl font-bold mb-2">Invalid or Expired Share Link</h1>
@@ -34,7 +31,7 @@ export default async function SharePage({
       <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
         Viewing shared results for {tool.name}
       </div>
-      <ToolRunner tool={tool} initialInputs={inputs} />
+      <ToolRunner tool={tool} encodedData={d} />
     </div>
   );
 }
