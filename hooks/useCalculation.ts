@@ -3,12 +3,14 @@
 import { useState, useCallback } from "react";
 import type { ToolDefinition, CalculationResult, ToolInputs } from "@/lib/tools/types";
 import { generateSchema } from "@/lib/calculations/validators";
-export function useCalculation(tool: ToolDefinition) {
+export function useCalculation(tool: ToolDefinition | undefined) {
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
   const calculate = useCallback(
     (inputs: ToolInputs): boolean => {
+      if (!tool) return false;
+
       const schema = generateSchema(tool.fields);
       const parsed = schema.safeParse(inputs);
 

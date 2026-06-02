@@ -1,6 +1,6 @@
 "use client";
 
-import type { ToolDefinition } from "@/lib/tools/types";
+import { getTool } from "@/lib/tools/registry";
 import { ToolForm } from "./ToolForm";
 import { ResultReport } from "./ResultReport";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -17,7 +17,7 @@ interface FieldErrors {
 }
 
 interface ToolRunnerProps {
-  tool: ToolDefinition;
+  slug: string;
   initialInputs?: Record<string, number | string | undefined>;
   encodedData?: string;
 }
@@ -31,8 +31,9 @@ const categoryLabels: Record<string, string> = {
   taxes: "Taxes",
 };
 
-export function ToolRunner({ tool, initialInputs, encodedData }: ToolRunnerProps) {
-  const form = useToolForm(tool.fields);
+export function ToolRunner({ slug, initialInputs, encodedData }: ToolRunnerProps) {
+  const tool = getTool(slug);
+  const form = useToolForm(tool?.fields ?? []);
   const calc = useCalculation(tool);
   const [showResult, setShowResult] = useState(false);
   const initialRun = useRef(false);
@@ -41,7 +42,7 @@ export function ToolRunner({ tool, initialInputs, encodedData }: ToolRunnerProps
   useEffect(() => {
     if (initialRun.current) return;
     const inputs = initialInputs || (encodedData ? decodeInputs(encodedData) : null);
-    if (!inputs) return;
+    if (!inputs || !tool) return;
 
     initialRun.current = true;
     form.setAllValues(inputs);
@@ -52,7 +53,7 @@ export function ToolRunner({ tool, initialInputs, encodedData }: ToolRunnerProps
     } catch {
       // validation errors on shared data — show form instead
     }
-  }, [initialInputs, encodedData, form, calc]);
+  }, [initialInputs, encodedData, form, calc, tool]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +78,18 @@ export function ToolRunner({ tool, initialInputs, encodedData }: ToolRunnerProps
     setShowResult(false);
   };
 
+  if (!tool) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <h2 className="text-2xl font-bold mb-2">Tool Not Found</h2>
+        <p className="text-zinc-500 dark:text-zinc-400">The requested tool could not be loaded.</p>
+        <Link href="/" className="mt-4 text-primary hover:underline text-sm">
+          Back to tools
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Link
@@ -90,9 +103,7 @@ export function ToolRunner({ tool, initialInputs, encodedData }: ToolRunnerProps
       <div>
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-2xl font-bold tracking-tight">{tool.name}</h1>
-          <Badge variant={tool.isPremium ? "premium" : "default"}>
-            {tool.isPremium ? "Premium" : "Free"}
-          </Badge>
+          <Badge variant="default">Free</Badge>
         </div>
         <p className="text-zinc-500 dark:text-zinc-400">{tool.description}</p>
         <span className="inline-block mt-2 text-xs text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-full">

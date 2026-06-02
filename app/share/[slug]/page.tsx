@@ -31,7 +31,7 @@ export default async function SharePage({
       <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
         Viewing shared results for {tool.name}
       </div>
-      <ToolRunner tool={tool} encodedData={d} />
+      <ToolRunner slug={slug} encodedData={d} />
     </div>
   );
 }
