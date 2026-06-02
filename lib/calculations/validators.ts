@@ -11,15 +11,19 @@ export function generateSchema(fields: FieldDefinition[]): z.ZodObject<Record<st
       case "currency":
       case "percentage":
       case "number": {
-        const numSchema = z.coerce.number();
+        // All numeric values must be >= 0 (or field.min if specified)
+        // No arbitrary upper limits — users have different financial situations
+        const minVal = field.min ?? 0;
+        const numSchema = z.coerce.number({
+          message: `${field.label} must be a valid number`,
+        });
+
         if (field.required) {
-          schema = numSchema.min(field.min ?? 0, `${field.label} is required`);
+          schema = numSchema.min(minVal, `${field.label} must be at least ${minVal}`);
         } else {
-          schema = numSchema.optional();
+          schema = numSchema.min(minVal, `${field.label} must be at least ${minVal}`).optional();
         }
-        if (field.max !== undefined) {
-          schema = (schema as z.ZodNumber).max(field.max, `${field.label} must be at most ${field.max}`);
-        }
+        // No max enforcement — calculations produce warnings for unrealistic values
         break;
       }
       case "select":

@@ -11,8 +11,8 @@ export const skillToIncome: ToolDefinition = {
   fields: [
     { key: "skillName", label: "Skill You Want to Learn", type: "text", required: true, defaultValue: "Web Development", group: "Skill Details" },
     { key: "skillCategory", label: "Skill Category", type: "select", required: true, defaultValue: "tech", group: "Skill Details", options: [{ label: "Technology", value: "tech" }, { label: "Creative", value: "creative" }, { label: "Business", value: "business" }, { label: "Trade", value: "trade" }, { label: "Health & Wellness", value: "health" }] },
-    { key: "learningMonths", label: "Months to Learn (Basic Proficiency)", type: "number", required: true, defaultValue: 6, group: "Learning Path", min: 1, max: 48 },
-    { key: "hoursPerWeek", label: "Hours Per Week for Learning", type: "number", required: true, defaultValue: 10, group: "Learning Path", min: 1, max: 60 },
+    { key: "learningMonths", label: "Months to Learn (Basic Proficiency)", type: "number", required: true, defaultValue: 6, group: "Learning Path", min: 1 },
+    { key: "hoursPerWeek", label: "Hours Per Week for Learning", type: "number", required: true, defaultValue: 10, group: "Learning Path", min: 1 },
     { key: "courseCost", label: "Estimated Course/Training Cost", type: "currency", required: false, defaultValue: 2000, group: "Learning Path", prefix: "$", min: 0 },
     { key: "currentHourlyRate", label: "Current Hourly Rate (if applicable)", type: "currency", required: false, defaultValue: 25, group: "Income Potential", prefix: "$", min: 0 },
   ],

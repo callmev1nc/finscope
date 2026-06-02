@@ -63,48 +63,55 @@ export const taxOptimization: ToolDefinition = {
 
     const brackets = taxBrackets[status] || taxBrackets.single;
     const standardDeduction = standardDeductions[status] || standardDeductions.single;
+
+    // Progressive tax calculation function
+    function calculateProgressiveTax(taxableIncome: number): number {
+      if (taxableIncome <= 0) return 0;
+      let tax = 0;
+      for (const bracket of brackets) {
+        if (taxableIncome <= bracket.min) break;
+        const taxableInBracket = Math.min(taxableIncome, bracket.max) - bracket.min;
+        tax += Math.max(0, taxableInBracket) * (bracket.rate / 100);
+      }
+      return tax;
+    }
+
+    // "Without optimization" = only standard deduction (no retirement, HSA, etc.)
+    const baselineTaxable = Math.max(0, income - standardDeduction);
+    const currentTax = calculateProgressiveTax(baselineTaxable);
+
+    // "With optimization" = all deductions applied
     const totalDeductions = retirement + hsa + Math.max(itemized, standardDeduction) + selfEmp;
-    const taxableIncome = Math.max(0, income - totalDeductions);
-
-    const currentTax = brackets.reduce((sum, b) => {
-      if (income > b.min) {
-        const taxable = Math.min(income, b.max) - b.min;
-        sum += Math.max(0, taxable) * (b.rate / 100);
-      }
-      return sum;
-    }, 0);
-
-    const optimizedTax = brackets.reduce((sum, b) => {
-      if (taxableIncome > b.min) {
-        const taxable = Math.min(taxableIncome, b.max) - b.min;
-        sum += Math.max(0, taxable) * (b.rate / 100);
-      }
-      return sum;
-    }, 0);
+    const optimizedTaxable = Math.max(0, income - totalDeductions);
+    const optimizedTax = calculateProgressiveTax(optimizedTaxable);
 
     const taxSavings = currentTax - optimizedTax;
-    const effectiveRate = (optimizedTax / income) * 100;
+    const effectiveRate = income > 0 ? (optimizedTax / income) * 100 : 0;
+    const marginalRate = brackets.reduce((top, b) => {
+      if (optimizedTaxable > b.min) return b.rate;
+      return top;
+    }, 0);
 
     const warnings: string[] = [];
-    if (taxableIncome <= 0) warnings.push("Deductions exceed income — you may have net operating loss.");
-    if (retirement < 19500) warnings.push("Consider maxing 401(k) ($23,000 for 2024) for maximum tax benefit.");
-    if (hsa < 4150 && income > 50000) warnings.push("HSA is triple tax-advantaged. Consider maxing it out.");
-    if (selfEmp > 0 && selfEmp < 2000) warnings.push("As self-employed, ensure you're capturing all eligible deductions.");
+    if (optimizedTaxable <= 0) warnings.push("Deductions exceed income — you may have net operating loss carryforward.");
+    if (retirement < 23000 && income > 50000) warnings.push("Consider maxing 401(k) ($23,000 for 2024) for maximum tax benefit.");
+    if (hsa < 4150 && income > 50000) warnings.push("HSA is triple tax-advantaged. Consider maxing it out ($4,150 individual / $8,300 family for 2024).");
+    if (selfEmp > 0 && selfEmp < 2000) warnings.push("As self-employed, ensure you're capturing all eligible deductions (home office, equipment, vehicle).");
     if (itemized > 0 && itemized < standardDeduction) warnings.push("Itemized deductions are less than standard deduction. Use the standard deduction instead.");
 
     const bracketData = brackets.map((b) => {
-      const currentTaxable = Math.min(Math.max(0, income - b.min), b.max - b.min);
-      return { label: `${b.rate}%`, value: Math.max(0, currentTaxable * (b.rate / 100)), color: "" };
+      const currentTaxableInBracket = Math.min(Math.max(0, optimizedTaxable - b.min), b.max - b.min);
+      return { label: `${b.rate}%`, value: Math.round(Math.max(0, currentTaxableInBracket * (b.rate / 100))), color: "" };
     });
 
     return {
-      summary: `Estimated tax bill: $${Math.round(optimizedTax).toLocaleString()} (${effectiveRate.toFixed(1)}% effective rate). You saved $${Math.round(taxSavings).toLocaleString()} through deductions.`,
+      summary: `Estimated tax bill: $${Math.round(optimizedTax).toLocaleString()} (${effectiveRate.toFixed(1)}% effective rate, ${marginalRate}% marginal). You saved $${Math.round(taxSavings).toLocaleString()} through deductions.`,
       metrics: [
         { label: "Gross Income", value: `$${income.toLocaleString()}`, isPositive: true },
         { label: "Total Deductions", value: `$${totalDeductions.toLocaleString()}`, isPositive: true },
-        { label: "Taxable Income", value: `$${taxableIncome.toLocaleString()}`, isPositive: true },
-        { label: "Tax Bill", value: `$${Math.round(optimizedTax).toLocaleString()}`, change: `Effective: ${effectiveRate.toFixed(1)}%`, isPositive: effectiveRate < 20 },
-        { label: "Tax Savings", value: `$${Math.round(taxSavings).toLocaleString()}`, isPositive: true },
+        { label: "Taxable Income", value: `$${optimizedTaxable.toLocaleString()}`, isPositive: true },
+        { label: "Tax Bill", value: `$${Math.round(optimizedTax).toLocaleString()}`, change: `Effective: ${effectiveRate.toFixed(1)}% / Marginal: ${marginalRate}%`, isPositive: effectiveRate < 20 },
+        { label: "Tax Savings", value: `$${Math.round(taxSavings).toLocaleString()}`, isPositive: taxSavings > 0 },
       ],
       sections: [
         {
@@ -121,20 +128,37 @@ export const taxOptimization: ToolDefinition = {
           type: "table",
           headers: ["Scenario", "Income", "Deductions", "Taxable", "Tax Due"],
           rows: [
-            ["Without Optimization", `$${income.toLocaleString()}`, `$${standardDeduction.toLocaleString()}`, `$${(income - standardDeduction).toLocaleString()}`, `$${Math.round(currentTax).toLocaleString()}`],
-            ["With Optimization", `$${income.toLocaleString()}`, `$${totalDeductions.toLocaleString()}`, `$${taxableIncome.toLocaleString()}`, `$${Math.round(optimizedTax).toLocaleString()}`],
+            ["Standard Deduction Only", `$${income.toLocaleString()}`, `$${standardDeduction.toLocaleString()}`, `$${baselineTaxable.toLocaleString()}`, `$${Math.round(currentTax).toLocaleString()}`],
+            ["With Optimization", `$${income.toLocaleString()}`, `$${totalDeductions.toLocaleString()}`, `$${optimizedTaxable.toLocaleString()}`, `$${Math.round(optimizedTax).toLocaleString()}`],
             ["Savings", "", "", "", `$${Math.round(taxSavings).toLocaleString()}`],
           ],
         },
+        {
+          title: "Your Marginal Bracket Analysis",
+          type: "table",
+          headers: ["Bracket", "Taxable Amount", "Tax at Rate"],
+          rows: brackets.map((b) => {
+            const taxableInBracket = Math.min(Math.max(0, optimizedTaxable - b.min), b.max - b.min);
+            const taxInBracket = Math.max(0, taxableInBracket) * (b.rate / 100);
+            return [
+              `${b.rate}% ($${b.min.toLocaleString()} - ${b.max === Infinity ? "+" : "$" + b.max.toLocaleString()})`,
+              `$${Math.round(taxableInBracket).toLocaleString()}`,
+              `$${Math.round(taxInBracket).toLocaleString()}`,
+            ];
+          }).filter((_, i) => {
+            const taxableInBracket = Math.min(Math.max(0, optimizedTaxable - brackets[i].min), brackets[i].max - brackets[i].min);
+            return taxableInBracket > 0;
+          }),
+        },
       ],
       recommendations: [
-        ...(retirement < 23000 ? [{
+        ...(retirement < 23000 && income > 50000 ? [{
           priority: "high" as const,
           title: "Max Out Retirement Contributions",
-          description: "Increase 401(k)/IRA contributions to the max. Every $1 contributed saves $0.10-0.37 in taxes.",
-          impact: `Potential additional savings: $${Math.round((23000 - retirement) * (effectiveRate / 100)).toLocaleString()}`,
+          description: "Increase 401(k)/IRA contributions to the max ($23,000 for 2024, $30,500 if 50+). Every $1 contributed saves $0.10-0.37 in taxes.",
+          impact: `Potential additional savings: $${Math.round(Math.max(0, 23000 - retirement) * (marginalRate / 100)).toLocaleString()}`,
         }] : []),
-        ...(hsa < 4150 ? [{
+        ...(hsa < 4150 && income > 50000 ? [{
           priority: "high" as const,
           title: "Maximize HSA Contributions",
           description: "HSA is the most tax-advantaged account: pre-tax contributions, tax-free growth, tax-free withdrawals for medical expenses.",
@@ -149,8 +173,20 @@ export const taxOptimization: ToolDefinition = {
         ...(selfEmp > 0 ? [{
           priority: "medium" as const,
           title: "Maximize Business Deductions",
-          description: "Track home office, equipment, software, travel, and meals. Consider a SEP-IRA for higher contribution limits.",
+          description: "Track home office, equipment, software, travel, and meals. Consider a SEP-IRA for higher contribution limits ($69,000 for 2024).",
           impact: "Could increase deductions by 10-20%",
+        }] : []),
+        ...(marginalRate >= 24 ? [{
+          priority: "medium" as const,
+          title: "Explore Municipal Bonds",
+          description: `At ${marginalRate}% marginal rate, tax-free municipal bond interest may outperform taxable bonds after taxes.`,
+          impact: `Tax-equivalent yield boost of ${marginalRate}%`,
+        }] : []),
+        ...(income > 200000 ? [{
+          priority: "low" as const,
+          title: "Consider Roth Conversion Strategy",
+          description: "If you expect lower income in future years, convert traditional IRA funds to Roth in lower-income years.",
+          impact: "Long-term tax-free growth",
         }] : []),
       ],
       warnings,

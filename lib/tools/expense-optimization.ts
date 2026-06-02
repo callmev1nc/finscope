@@ -36,26 +36,93 @@ export const expenseOptimization: ToolDefinition = {
     const variableExpenses = groceries + diningOut + entertainment + shopping + subscriptions + transport;
     const totalExpenses = fixedExpenses + variableExpenses;
     const monthlySurplus = income - totalExpenses;
-    const savingsRate = (monthlySurplus / income) * 100;
+    const savingsRate = income > 0 ? (monthlySurplus / income) * 100 : 0;
+    const isDeficit = totalExpenses > income;
 
-    const diningTarget = Math.round(diningOut * 0.6);
-    const entertainmentTarget = Math.round(entertainment * 0.7);
-    const shoppingTarget = Math.round(shopping * 0.5);
-    const subscriptionSavings = subscriptions > 50 ? Math.round(subscriptions * 0.4) : 0;
+    // Smarter proportional targets: cut more aggressively when in deficit
+    const diningTarget = Math.round(diningOut * (isDeficit ? 0.45 : 0.6));
+    const entertainmentTarget = Math.round(entertainment * (isDeficit ? 0.55 : 0.7));
+    const shoppingTarget = Math.round(shopping * (isDeficit ? 0.4 : 0.5));
+    // Subscription savings apply for any subscription amount > 0
+    const subscriptionSavings = subscriptions > 0 ? Math.round(subscriptions * 0.3) : 0;
+
     const potentialSavings = (diningOut - diningTarget) + (entertainment - entertainmentTarget) + (shopping - shoppingTarget) + subscriptionSavings;
 
+    // Spending health score (0-100)
+    let healthScore = 100;
+    if (isDeficit) healthScore -= 30;
+    if (savingsRate < 10) healthScore -= 15;
+    if (savingsRate < 0) healthScore -= 15;
+    if (income > 0 && housing > income * 0.35) healthScore -= 10;
+    if (diningOut > groceries && groceries > 0) healthScore -= 10;
+    if (subscriptions > 100) healthScore -= 5;
+    if (income > 0 && fixedExpenses > income * 0.5) healthScore -= 10;
+    healthScore = Math.max(0, Math.min(100, healthScore));
+
+    const healthLabel = healthScore >= 80 ? "Healthy" : healthScore >= 60 ? "Fair" : healthScore >= 40 ? "Needs Attention" : "Critical";
+
     const warnings: string[] = [];
-    if (totalExpenses > income) warnings.push("You're spending more than you earn each month.");
-    if (housing > income * 0.35) warnings.push("Housing costs exceed 35% of income — consider downsizing.");
-    if (savingsRate < 10) warnings.push("Your savings rate is below 10%. Look for areas to cut back.");
-    if (diningOut > groceries) warnings.push("You spend more on dining out than groceries. Consider cooking at home more.");
+    if (isDeficit) warnings.push(`You're overspending by $${Math.abs(monthlySurplus).toLocaleString()}/mo. This is unsustainable — cut expenses immediately.`);
+    if (income > 0 && housing > income * 0.35) warnings.push("Housing costs exceed 35% of income — consider downsizing.");
+    if (savingsRate < 10 && savingsRate >= 0) warnings.push("Your savings rate is below 10%. Look for areas to cut back.");
+    if (diningOut > groceries && groceries > 0) warnings.push("You spend more on dining out than groceries. Consider cooking at home more.");
+    if (subscriptions > 100) warnings.push(`You're spending $${subscriptions}/mo on subscriptions. Audit for unused services.`);
+
+    const optimizationRows: (string | number)[][] = [
+      diningOut > 0 ? ["Dining Out", `$${diningOut}`, `$${diningTarget}`, `$${diningOut - diningTarget}`] : ["Dining Out", "$0", "$0", "$0"],
+      entertainment > 0 ? ["Entertainment", `$${entertainment}`, `$${entertainmentTarget}`, `$${entertainment - entertainmentTarget}`] : ["Entertainment", "$0", "$0", "$0"],
+      shopping > 0 ? ["Shopping", `$${shopping}`, `$${shoppingTarget}`, `$${shopping - shoppingTarget}`] : ["Shopping", "$0", "$0", "$0"],
+      subscriptions > 0 ? ["Subscriptions", `$${subscriptions}`, `$${subscriptions - subscriptionSavings}`, `$${subscriptionSavings}`] : ["Subscriptions", "$0", "$0", "$0"],
+    ];
+
+    const recommendations = [
+      {
+        priority: "high" as const,
+        title: "Apply the 50/30/20 Rule",
+        description: `Your needs (fixed expenses) are ${income > 0 ? ((fixedExpenses / income) * 100).toFixed(0) : "N/A"}% of income. Aim for 50% needs, 30% wants, 20% savings.`,
+        impact: monthlySurplus > 0 ? `Currently saving ${savingsRate.toFixed(0)}%` : "Negative cash flow — focus on cutting wants first",
+      },
+      ...(isDeficit ? [{
+        priority: "high" as const,
+        title: "Urgent: Eliminate Your Deficit",
+        description: `You need to cut $${Math.abs(monthlySurplus).toLocaleString()}/mo to break even. Start with the highest-impact categories: dining, shopping, and subscriptions.`,
+        impact: `Target: reduce spending by $${Math.abs(monthlySurplus).toLocaleString()}/mo`,
+      }] : []),
+      ...(diningOut > 150 ? [{
+        priority: "medium" as const,
+        title: "Reduce Dining Out",
+        description: `Cut dining out from $${diningOut}/mo to $${diningTarget}/mo by meal prepping and cooking at home.`,
+        impact: `Saves $${(diningOut - diningTarget).toLocaleString()}/mo`,
+      }] : []),
+      ...(subscriptions > 0 ? [{
+        priority: "low" as const,
+        title: "Audit Subscriptions",
+        description: `Review your $${subscriptions}/mo in subscriptions. Cancel unused ones and share family plans.`,
+        impact: `Potential savings: $${subscriptionSavings}/mo`,
+      }] : []),
+      ...(transport > 200 ? [{
+        priority: "low" as const,
+        title: "Optimize Transportation",
+        description: "Consider public transit, carpooling, or biking to reduce transportation costs.",
+        impact: "Could save 20-40% on transport",
+      }] : []),
+      ...(shopping > 200 ? [{
+        priority: "medium" as const,
+        title: "Curb Discretionary Shopping",
+        description: `Your shopping is $${shopping}/mo. Apply a 48-hour rule before purchases and set a $${shoppingTarget}/mo cap.`,
+        impact: `Saves $${(shopping - shoppingTarget).toLocaleString()}/mo`,
+      }] : []),
+    ];
 
     return {
-      summary: `Total monthly expenses: $${totalExpenses.toLocaleString()} (${((totalExpenses / income) * 100).toFixed(0)}% of income). You could save $${potentialSavings.toLocaleString()}/mo by optimizing variable expenses.`,
+      summary: isDeficit
+        ? `WARNING: Spending $${totalExpenses.toLocaleString()}/mo exceeds income by $${Math.abs(monthlySurplus).toLocaleString()}. Health score: ${healthScore}/100 (${healthLabel}). Cut $${Math.abs(monthlySurplus).toLocaleString()}/mo to break even.`
+        : `Total monthly expenses: $${totalExpenses.toLocaleString()} (${income > 0 ? ((totalExpenses / income) * 100).toFixed(0) : "N/A"}% of income). Health score: ${healthScore}/100 (${healthLabel}). You could save $${potentialSavings.toLocaleString()}/mo by optimizing.`,
       metrics: [
-        { label: "Total Expenses", value: `$${totalExpenses.toLocaleString()}`, isPositive: false },
-        { label: "Monthly Surplus", value: `$${Math.max(0, monthlySurplus).toLocaleString()}`, change: monthlySurplus < 0 ? "Deficit" : "Healthy", isPositive: monthlySurplus >= 0 },
+        { label: "Total Expenses", value: `$${totalExpenses.toLocaleString()}`, isPositive: !isDeficit },
+        { label: "Monthly Surplus", value: `$${Math.max(0, monthlySurplus).toLocaleString()}`, change: monthlySurplus < 0 ? `Deficit: -$${Math.abs(monthlySurplus).toLocaleString()}` : "Healthy", isPositive: monthlySurplus >= 0 },
         { label: "Savings Rate", value: `${savingsRate.toFixed(1)}%`, isPositive: savingsRate >= 10 },
+        { label: "Spending Health", value: `${healthScore}/100`, change: healthLabel, isPositive: healthScore >= 60 },
         { label: "Potential Savings", value: `$${potentialSavings.toLocaleString()}/mo`, change: `$${(potentialSavings * 12).toLocaleString()}/yr`, isPositive: true },
       ],
       sections: [
@@ -78,40 +145,22 @@ export const expenseOptimization: ToolDefinition = {
           title: "Optimization Opportunity",
           type: "table",
           headers: ["Category", "Current", "Target", "Savings"],
+          rows: optimizationRows,
+        },
+        ...(isDeficit ? [{
+          title: "Deficit Action Plan",
+          type: "table" as const,
+          headers: ["Priority", "Action", "Savings"],
           rows: [
-            diningOut > 0 ? ["Dining Out", `$${diningOut}`, `$${diningTarget}`, `$${diningOut - diningTarget}`] : ["Dining Out", "$0", "$0", "$0"],
-            entertainment > 0 ? ["Entertainment", `$${entertainment}`, `$${entertainmentTarget}`, `$${entertainment - entertainmentTarget}`] : ["Entertainment", "$0", "$0", "$0"],
-            shopping > 0 ? ["Shopping", `$${shopping}`, `$${shoppingTarget}`, `$${shopping - shoppingTarget}`] : ["Shopping", "$0", "$0", "$0"],
-            subscriptions > 50 ? ["Subscriptions", `$${subscriptions}`, `$${subscriptions - subscriptionSavings}`, `$${subscriptionSavings}`] : ["Subscriptions", "$0", "$0", "$0"],
+            diningOut > 0 ? ["1", `Cut dining to $${diningTarget}/mo`, `$${diningOut - diningTarget}`] : ["1", "Dining: N/A", "$0"],
+            shopping > 0 ? ["2", `Reduce shopping to $${shoppingTarget}/mo`, `$${shopping - shoppingTarget}`] : ["2", "Shopping: N/A", "$0"],
+            entertainment > 0 ? ["3", `Reduce entertainment to $${entertainmentTarget}/mo`, `$${entertainment - entertainmentTarget}`] : ["3", "Entertainment: N/A", "$0"],
+            subscriptions > 0 ? ["4", `Audit subscriptions (save 30%)`, `$${subscriptionSavings}`] : ["4", "Subscriptions: N/A", "$0"],
+            ["Total", "Combined cuts", `$${potentialSavings}`],
           ],
-        },
-      ],
-      recommendations: [
-        {
-          priority: "high" as const,
-          title: "Apply the 50/30/20 Rule",
-          description: `Your needs (fixed expenses) are ${((fixedExpenses / income) * 100).toFixed(0)}% of income. Aim for 50% needs, 30% wants, 20% savings.`,
-          impact: monthlySurplus > 0 ? `Currently saving ${savingsRate.toFixed(0)}%` : "Negative cash flow",
-        },
-        ...(diningOut > 200 ? [{
-          priority: "medium" as const,
-          title: "Reduce Dining Out",
-          description: `Cut dining out from $${diningOut}/mo to $${diningTarget}/mo by meal prepping and cooking at home.`,
-          impact: `Saves $${(diningOut - diningTarget).toLocaleString()}/mo`,
-        }] : []),
-        ...(subscriptions > 50 ? [{
-          priority: "low" as const,
-          title: "Audit Subscriptions",
-          description: `Review your $${subscriptions}/mo in subscriptions. Cancel unused ones and share family plans.`,
-          impact: `Potential savings: $${subscriptionSavings}/mo`,
-        }] : []),
-        ...(transport > 200 ? [{
-          priority: "low" as const,
-          title: "Optimize Transportation",
-          description: "Consider public transit, carpooling, or biking to reduce transportation costs.",
-          impact: "Could save 20-40% on transport",
         }] : []),
       ],
+      recommendations,
       warnings,
     };
   },
