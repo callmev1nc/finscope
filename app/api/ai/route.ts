@@ -75,10 +75,11 @@ Rules:
 - Do not repeat advice already in the calculation warnings
 - Keep descriptions under 100 words each`;
 
-    // Try models in order — fall back to older model if primary not found
+    // Try models in order — current free tier models as of June 2026
     const modelUrls = [
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=",
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=",
     ];
 
     let geminiData: { candidates?: GeminiCandidate[] } | null = null;
