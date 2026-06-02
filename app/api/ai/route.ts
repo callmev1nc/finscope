@@ -1,13 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=`;
+
+interface GeminiCandidate {
+  content?: { parts?: { text?: string }[] };
+}
+
+async function callGemini(modelUrl: string, apiKey: string, prompt: string): Promise<{ ok: boolean; status: number; data: { candidates?: GeminiCandidate[] } | null }> {
+  try {
+    const response = await fetch(`${modelUrl}${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error(`Gemini API error (${response.status}):`, errBody);
+      return { ok: false, status: response.status, data: null };
+    }
+
+    const data = await response.json();
+    return { ok: true, status: 200, data };
+  } catch (err) {
+    console.error("Gemini fetch error:", err);
+    return { ok: false, status: 500, data: null };
+  }
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { toolName, inputs, calculationResult } = body;
 
-  // If no API key, return a hint to use algorithmic fallback
+  // If no API key, return algorithmic fallback hint
   if (!GEMINI_API_KEY) {
     return NextResponse.json({
       recommendations: [],
@@ -44,27 +75,37 @@ Rules:
 - Do not repeat advice already in the calculation warnings
 - Keep descriptions under 100 words each`;
 
-    const response = await fetch(`${GEMINI_URL}${GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024,
-        },
-      }),
-    });
+    // Try models in order — fall back to older model if primary not found
+    const modelUrls = [
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=",
+    ];
 
-    if (!response.ok) {
+    let geminiData: { candidates?: GeminiCandidate[] } | null = null;
+
+    for (const url of modelUrls) {
+      const result = await callGemini(url, GEMINI_API_KEY, prompt);
+      if (result.ok && result.data) {
+        geminiData = result.data;
+        break;
+      }
+      // If not a 404 (model not found), don't try next model
+      if (result.status !== 404) {
+        return NextResponse.json({
+          recommendations: [],
+          analysisNotes: `AI service error (${result.status}). Using algorithmic analysis.`,
+        });
+      }
+    }
+
+    if (!geminiData) {
       return NextResponse.json({
         recommendations: [],
-        analysisNotes: "AI service temporarily unavailable.",
+        analysisNotes: "AI models unavailable. Using algorithmic analysis.",
       });
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     // Extract JSON from response (may have code fences)
     let jsonStr = text;
@@ -77,9 +118,11 @@ Rules:
       const parsed = JSON.parse(jsonStr);
       return NextResponse.json(parsed);
     } catch {
+      // If JSON parsing fails, return the raw text as analysis notes
       return NextResponse.json({
         recommendations: [],
-        analysisNotes: "AI response could not be parsed. Using algorithmic analysis.",
+        enhancedSummary: text.slice(0, 200),
+        analysisNotes: "AI generated insights (raw text). Using algorithmic analysis for structured recommendations.",
       });
     }
   } catch (error) {
