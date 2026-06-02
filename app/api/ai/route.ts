@@ -16,7 +16,6 @@ async function callGemini(modelUrl: string, apiKey: string, prompt: string): Pro
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 2048,
-          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
     });
@@ -56,15 +55,6 @@ Result: ${JSON.stringify(calculationResult)}
 
 JSON format (respond with ONLY this JSON, nothing else):
 {"recommendations":[{"title":"5 words max","description":"1 sentence with user's numbers","priority":"high","reasoning":"1 sentence why"}],"enhancedSummary":"1 sentence","analysisNotes":"1 sentence"}`;
-}
-
-Rules:
-- Use the user's ACTUAL numbers in recommendations (not generic examples)
-- Be specific and actionable, not generic advice
-- Explain WHY each recommendation fits THIS user's situation
-- Consider the user's risk level, timeline, and goals
-- Do not repeat advice already in the calculation warnings
-- Keep descriptions under 100 words each`;
 
     // Try models in order — current free tier models as of June 2026
     const modelUrls = [
